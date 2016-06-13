@@ -6,6 +6,7 @@ import (
 	schedulerClient "github.com/rancher/scheduler/client"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type IopsInfo struct {
@@ -28,6 +29,7 @@ type HostInfo struct {
 	MemTotalInMB      float64
 	MemUsedInMB       float64
 	NotCompleteLoaded bool
+	TimeLastAllocated time.Time
 
 	// key: device path (/dev/sda) without /dev prefix
 	Disks map[string]*DiskInfo
@@ -37,8 +39,11 @@ type HostInfo struct {
 }
 
 const (
-	DefaultDiskPath      = "default"
 	DivisionFactorOfVcpu = 2
+)
+
+var (
+	DefaultDiskPath = "default"
 )
 
 // return true means allocated, otherwise not allocated anything
@@ -76,6 +81,7 @@ func (host *HostInfo) AllocateIopsForInstance(labels map[string]interface{}, ins
 	}
 	diskInfo.Iops.ReadAllocated += readIopsReserved
 	diskInfo.Iops.WriteAllocated += writeIopsReserved
+	host.TimeLastAllocated = time.Now()
 	log.Infof("host id:%s, after allocation, ReadAllocated: %d, WriteAllocated: %d", host.HostId,
 		diskInfo.Iops.ReadAllocated, diskInfo.Iops.WriteAllocated)
 
@@ -116,6 +122,7 @@ func (host *HostInfo) DeallocateIopsForInstance(instanceId string) {
 	}
 	diskInfo.Iops.ReadAllocated -= readIopsReserved
 	diskInfo.Iops.WriteAllocated -= writeIopsReserved
+	host.TimeLastAllocated = time.Now()
 	log.Infof("host id:%s, after deallocation, ReadAllocated: %d, WriteAllocated: %d", host.HostId,
 		diskInfo.Iops.ReadAllocated, diskInfo.Iops.WriteAllocated)
 
@@ -173,6 +180,7 @@ func (host *HostInfo) AllocateCPUMemoryForVM(vm *rancherClient.VirtualMachine) {
 	// account for cpu/mem resource used by this instance
 	host.CpuUsed += cpuReserved
 	host.MemUsedInMB += memReserved
+	host.TimeLastAllocated = time.Now()
 	log.Infof("host id: %s, after allocation, CpuUsed: %f, memReserved: %f", host.HostId,
 		host.CpuUsed, host.MemUsedInMB)
 
@@ -199,6 +207,7 @@ func (host *HostInfo) DeallocateCPUMemoryForVM(instanceId string) {
 
 	host.CpuUsed -= cpuReserved
 	host.MemUsedInMB -= memReserved
+	host.TimeLastAllocated = time.Now()
 	log.Infof("host id:%s, after deallocation, CpuUsed: %f, MemUsedInMB: %f", host.HostId,
 		host.CpuUsed, host.MemUsedInMB)
 }

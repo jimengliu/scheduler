@@ -65,6 +65,21 @@ func GetHost(hostId string) (*client.Host, error) {
 	return host, nil
 }
 
+// GetHost: get host data from cattle
+func UpdateHost(host *client.Host, updates interface{}) error {
+	clientPtr, err := getRancherClient()
+	if err != nil {
+		log.Fatalf("Failed to get Rancher client %v", err)
+		return err
+	}
+	_, err = clientPtr.Host.Update(host, updates)
+	if err != nil {
+		return fmt.Errorf("Coudln't update cattle host with id:%s. Error: %#v", host.Id, err)
+	}
+
+	return nil
+}
+
 // GetInstance: get instance data from cattle
 func GetInstance(instanceId string) (*client.Instance, error) {
 	clientPtr, err := getRancherClient()
