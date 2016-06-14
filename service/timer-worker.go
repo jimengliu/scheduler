@@ -35,7 +35,7 @@ func TimerWorker() {
 					log.Infof("some resource allcation happened in past period: %d seconds, on host id: %s", period/time.Second, hostId)
 					err := updateHostAllocationStats(hostInfo)
 					if err != nil {
-						log.Errorf("can't update cattle host hostId: %s with allocation change", hostId)
+						log.Errorf("can't update cattle host hostId: %s with allocation change, error: %s", hostId, err.Error())
 					} else {
 						log.Infof("updated cattle host hostId: %s using newly allocation changes", hostId)
 					}
